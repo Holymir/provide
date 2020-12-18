@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/hashgraph/hedera-sdk-go"
 )
 
@@ -8,49 +9,30 @@ type HCSClient struct {
 	Client *hedera.Client
 }
 
-func (hcsc *HCSClient) CreateOpenTopic(memo string, maxFee float64) (topicID string, err error) {
-
-	txResponse, err := hedera.NewTopicCreateTransaction().
-		SetAdminKey(hcsc.Client.GetOperatorPublicKey()).
-		SetTransactionMemo(memo).
-		SetMaxTransactionFee(hedera.HbarFrom(maxFee, hedera.HbarUnits.Hbar)).
-		Execute(hcsc.Client)
-	if err != nil {
-		return "", err
-	}
-
-	transactionReceipt, err := txResponse.GetReceipt(hcsc.Client)
-
-	if err != nil {
-		return "", err
-	}
-
-	newTopicID := *transactionReceipt.TopicID
-
-	return newTopicID.String(), nil
-}
-
 func (hcsc *HCSClient) CreateTopic(publicKeys []string, memo string, maxFee float64) (topicID string, err error) {
-
-	k := hedera.KeyListWithThreshold(1)
-
-	for i := 0; i < len(publicKeys); i++ {
-		publicKey, err := hedera.PublicKeyFromString(publicKeys[i])
-		if err != nil {
-			return "", err
-		}
-		k = k.Add(publicKey)
-	}
-
-	txResponse, err := hedera.NewTopicCreateTransaction().
-		SetSubmitKey(k).
+	transaction := hedera.NewTopicCreateTransaction().
 		SetAdminKey(hcsc.Client.GetOperatorPublicKey()).
 		SetTransactionMemo(memo).
-		SetMaxTransactionFee(hedera.HbarFrom(maxFee, hedera.HbarUnits.Hbar)).
-		Execute(hcsc.Client)
+		SetMaxTransactionFee(hedera.HbarFrom(maxFee, hedera.HbarUnits.Hbar))
+
+	if len(publicKeys) > 0 {
+		k := hedera.KeyListWithThreshold(1)
+
+		for i := 0; i < len(publicKeys); i++ {
+			publicKey, err := hedera.PublicKeyFromString(publicKeys[i])
+			if err != nil {
+				return "", err
+			}
+			k = k.Add(publicKey)
+		}
+		transaction.SetSubmitKey(k)
+	}
+
+	txResponse, err := transaction.Execute(hcsc.Client)
 	if err != nil {
 		return "", err
 	}
+
 
 	transactionReceipt, err := txResponse.GetReceipt(hcsc.Client)
 
@@ -79,11 +61,13 @@ func (hcsc *HCSClient) SubmitMessage(topicID string, message []byte, memo string
 		return err
 	}
 
-	_, err = txResponse.GetReceipt(hcsc.Client)
+	// TODO: handle the status
+	txReceipt, err := txResponse.GetReceipt(hcsc.Client)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(txReceipt.Status)
 	return nil
 }
 
@@ -104,20 +88,23 @@ func (hcsc *HCSClient) SubscribeToTopic(topicID string, callback func(hedera.Top
 	return nil
 }
 
-func (hcsc *HCSClient) GetTopicInfo(topicID string) (info hedera.TopicInfo, err error){
+func (hcsc *HCSClient) GetTopicInfo(topicID string) (memo string, err error){
 	topicIDFromString, err := hedera.TopicIDFromString(topicID)
-	//if err != nil {
-	//	return "", err
-	//}
+	if err != nil {
+		panic(err)
+		return "", err
+	}
 
 	topicInfo, err := hedera.NewTopicInfoQuery().
 		SetTopicID(topicIDFromString).
 		Execute(hcsc.Client)
 	if err != nil {
 		panic(err)
+		return "", err
 	}
 
-	return topicInfo, nil
+	fmt.Println(topicInfo)
+	return topicInfo.Memo, nil
 }
 
 

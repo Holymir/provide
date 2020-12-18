@@ -18,7 +18,14 @@ func main() {
 	hcsClient := hcs.NewHCSClient(client)
 
 	// TODO: Create Topic
-	//topicID, err := hcsClient.CreateTopic([]string{"302a300506032b6570032100424d2b3f9ec5d189bf24515ced88cdef28725b2fa32eb31023c551c56eb76f2f"}, "topic memo new", 5)
+	//// Lb4 pubKey: 302a300506032b6570032100424d2b3f9ec5d189bf24515ced88cdef28725b2fa32eb31023c551c56eb76f2f
+	//topicName := "Private Topic 2"
+	//maxFee := 5.0
+	//topicID, err := hcsClient.CreateTopic([]string{
+	//	"302a300506032b6570032100cf97438ddf5769e6dcd674e9fbf22fd30d10e6b727e9cca4edb1c69e1c555a5c",
+	//	"302a300506032b6570032100424d2b3f9ec5d189bf24515ced88cdef28725b2fa32eb31023c551c56eb76f2f",
+	//}, topicName, maxFee)
+	//
 	//if err != nil {
 	//	panic(err)
 	//}
@@ -35,16 +42,17 @@ func main() {
 	//}
 
 	// TODO: Submit message
-	//err := hcsClient.SubmitMessage("0.0.159256", []byte("Only Lb4 and Vnc can submit"), "zdr bepce")
-	//if err != nil {
-	//	panic(err)
-	//}
+	topicID := "0.0.160549"
+	err := hcsClient.SubmitMessage(topicID, []byte("Only Lb4 and Vnc can submit"), "zdr bepce")
+	if err != nil {
+		panic(err)
+	}
 
 	//time.Sleep(20 * time.Second)
-	//
-	submitKey, _ := hcsClient.GetTopicInfo("0.0.159256")
 
-	fmt.Println(submitKey)
+	memo, _ := hcsClient.GetTopicInfo(topicID)
+
+	fmt.Println(memo)
 
 
 }
